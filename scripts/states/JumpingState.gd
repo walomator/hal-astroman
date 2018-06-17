@@ -3,7 +3,7 @@ extends "res://scripts/framework/State.gd"
 # This state describes any in which the player is in the air, including falling
 # after running off a ledge. It is not limited to voluntarily jumping.
 
-var is_grounded = true
+const Effect = preload("res://scripts/framework/effect.gd")
 
 func _init(controlled_player):
 	player = controlled_player
@@ -20,10 +20,10 @@ func start():
 
 func state_process(delta):
 	# Set velocity caused by player input for handling by character.gd
-	player.set_controller_velocity(Vector2(player.run_speed * player.direction, 0))
+	player.set_controller_velocity(Vector2(player.run_speed * player.facing_direction, 0))
 	
-	if player.direction == 0:
-		player.run_speed = 0 # FEAT - Don't allow sudden stopping in mid-air
+#	if player.input_direction == 0: # Comment out if you want to block the player stopping mid-air
+#		player.run_speed = 0
 	
 	if is_on_ground():
 		set_state("StandingState")
@@ -36,6 +36,9 @@ func set_state(new_state):
 	
 	if new_state == "StandingState" or new_state == "RunningState":
 		player.jump_count = 0
+		_land()
+		if new_state == "StandingState":
+			player.set_controller_velocity(Vector2(0, 0))
 		
 	player.fall_anim_node.stop()
 	player.fall_anim_node.visible = false
@@ -52,3 +55,8 @@ func is_on_ground():
 	if player.natural_velocity.y >= 0:
 		test = player.test_move(player.get_transform(), Vector2(0, 1))
 	return test
+
+func _land():
+	var landing_effect = Effect.new()
+	player.add_child(landing_effect)
+	landing_effect.play_anim_once("LandingAnim")

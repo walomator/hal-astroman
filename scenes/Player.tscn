@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=2]
+[gd_scene load_steps=15 format=2]
 
 [ext_resource path="res://scripts/player.gd" type="Script" id=1]
 [ext_resource path="res://textures/player/idle.png" type="Texture" id=2]
@@ -7,6 +7,9 @@
 [ext_resource path="res://textures/player/run/3.png" type="Texture" id=5]
 [ext_resource path="res://textures/player/run/4.png" type="Texture" id=6]
 [ext_resource path="res://textures/player/jump/3.png" type="Texture" id=7]
+[ext_resource path="res://textures/player/particles/landing/0.png" type="Texture" id=8]
+[ext_resource path="res://textures/player/particles/landing/1.png" type="Texture" id=9]
+[ext_resource path="res://textures/player/particles/landing/2.png" type="Texture" id=10]
 
 [sub_resource type="RectangleShape2D" id=1]
 
@@ -30,6 +33,16 @@ animations = [ {
 "name": "default",
 "speed": 5.0
 } ]
+
+[sub_resource type="SpriteFrames" id=4]
+
+animations = [ {
+"frames": [ ExtResource( 8 ), ExtResource( 9 ), ExtResource( 10 ) ],
+"loop": false,
+"name": "default",
+"speed": 10.0
+} ]
+_sections_unfolded = [ "Resource" ]
 
 [node name="Player" type="KinematicBody2D" index="0"]
 
@@ -89,6 +102,12 @@ animation = "default"
 
 visible = false
 frames = SubResource( 3 )
+animation = "default"
+
+[node name="LandingAnim" type="AnimatedSprite" parent="." index="5"]
+
+visible = false
+frames = SubResource( 4 )
 animation = "default"
 
 

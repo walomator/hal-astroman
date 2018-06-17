@@ -27,7 +27,7 @@ func state_process(delta):
 		player.run_speed -= DECELERATION * delta
 	else:
 		player.run_speed = 0
-	player.set_controller_velocity(Vector2(player.run_speed * player.last_direction, 0))
+	player.set_controller_velocity(Vector2(player.run_speed * player.facing_direction, 0))
 
 
 func set_state(new_state):

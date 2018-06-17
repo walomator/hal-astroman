@@ -5,7 +5,6 @@ extends "res://scripts/framework/State.gd"
 
 var stun_time
 var old_state_name
-var stun_timer
 
 func _init(controlled_player, player_stun_time, player_old_state_name):
 	player = controlled_player

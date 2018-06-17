@@ -7,6 +7,7 @@ var debug = false
 var idle_sprite_node # Safe to initialize in the _ready() function
 var move_anim_node
 var fall_anim_node
+var landing_anim_node
 #var scoreboard_node
 var collision_handler_node
 var center_box_node
@@ -19,8 +20,8 @@ signal attacked_enemy
 #signal body_collided
 signal shutdown
 
-var direction = 0 # 0 = stationary, 1 = right, -1 = left
-var last_direction = 1 # The direction last moved, or the facing direction
+var input_direction = 0 # 0 = stationary, 1 = right, -1 = left
+var facing_direction = 1 # The direction last moved
 var start_pos_x = 38 # DEV - Make single vector
 var start_pos_y = 17
 var run_speed = 0
@@ -64,10 +65,12 @@ func _ready():
 	var idle_sprite_node_name = "IdleSprite/"
 	var move_anim_node_name = "RunAnim/"
 	var fall_anim_node_name = "FallAnim/"
+	var landing_anim_node_name = "LandingAnim/"
 	
 	idle_sprite_node       = get_node(path_to_player_node + idle_sprite_node_name)
 	move_anim_node         = get_node(path_to_player_node + move_anim_node_name)
 	fall_anim_node         = get_node(path_to_player_node + fall_anim_node_name)
+	landing_anim_node      = get_node(path_to_player_node + landing_anim_node_name)
 #	scoreboard_node        = get_node(path_to_scoreboard_node)
 	collision_handler_node = get_node(path_to_collision_handler_node)
 	global_node            = get_node(path_to_global_node)
@@ -98,9 +101,6 @@ func _input(event):
 	if event.is_action_pressed("shutdown"):
 		emit_signal("shutdown")
 	
-#	if direction:
-#		last_direction = direction
-	
 	# Input
 	if event.is_action_pressed("move_right"):
 		action.add("right")
@@ -128,8 +128,7 @@ func _input(event):
 		debug()
 	
 
-func set_state(new_state): # After initial call, only use state.set_state
-	print(new_state)
+func set_state(new_state): # After initial call, only use this function coupled with state-handled switching
 	# DEV - These don't need to be instances right _now_
 	var old_state = state
 	if   new_state == "StandingState":
@@ -150,7 +149,7 @@ func set_state(new_state): # After initial call, only use state.set_state
 	
 
 func handle_timeout(object_timer, timer_name): # Called by a timer after it times out
-	state.handle_timeout(timer_name)
+	state.handle_timeout(timer_name) # DEV - How timers are used is confusing
 	object_timer.queue_free()
 	
 
@@ -161,27 +160,23 @@ func flip_sprite(is_flipped): # DEV - Should be part of character.gd
 	
 
 func update_direction(): # Decides how to update sprite # DEV - Should be passed "direction"
-	direction = 0
+	input_direction = 0
 	if "right" in action.get_actions():
-		direction += 1
+		input_direction += 1
 	if "left" in action.get_actions():
-		direction -= 1
+		input_direction -= 1
 	
-	# DEV - This should be set by states
-#	run_speed = MAX_RUN_SPEED * direction # This makes the next line seem redundant, and it is as long as there is no speed ramp
-#	run_speed = min(abs(run_speed), MAX_RUN_SPEED) * direction # DEV - Hacky thing number 2, write this better
-	
-	if direction == 0:
+	if input_direction == 0:
 		is_moving = false
 	else:
 		is_moving = true
 	
-	if direction:
-		last_direction = direction
+	if input_direction:
+		facing_direction = input_direction
 		
-	if direction > 0:
+	if input_direction > 0:
 		flip_sprite(false)
-	if direction < 0:
+	if input_direction < 0:
 		flip_sprite(true)
 	
 
@@ -196,7 +191,7 @@ func reel(reel_force, normal):
 #	state.set_state("StunnedState")
 #	reset_velocity()
 #	increase_velocity(Vector2(normal.x * reel_force, 0))
-#	direction = 0
+#	input_direction = 0
 #	action.clear()
 #	update_direction()
 	
@@ -225,15 +220,17 @@ func launch_particle(particle_type): # BUG - Causes crash
 	
 #	# DEV - This code limits usage of the launch_particle function
 #	get_tree().get_root().add_child(particle)
-#	particle.set_direction(last_direction)
+#	particle.set_direction(facing_direction)
 #	particle.set_spawner(self)
 #	particle.set_global_pos(self.position) # BUG - Not centered
 	
 
 func debug():
-	print("state: ", state.get_name())
-	var ground_collision = test_move(get_transform(), -GRAVITY_NORMAL)
-	print(ground_collision)
+#	print("state: ", state.get_name())
+#	var ground_collision = test_move(get_transform(), -GRAVITY_NORMAL)
+#	print(ground_collision)
+	print(self.get_path())
+	
 	
 
 func handle_body_collided(colliding_body, collision_normal): # DEV - This function name is misleading

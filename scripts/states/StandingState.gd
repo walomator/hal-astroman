@@ -18,9 +18,6 @@ func state_process(delta):
 	if is_in_air():
 		set_state("JumpingState")
 	
-	# Set velocity caused by player input for handling by character.gd
-	player.set_controller_velocity(Vector2(player.run_speed, 0))
-	
 
 func set_state(new_state):
 	if exiting == true:

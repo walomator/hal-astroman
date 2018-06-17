@@ -1,6 +1,5 @@
 extends "res://scripts/framework/State.gd"
 
-var is_grounded = true # DEV - Not currently implemented, but may solve the jumping problem
 const ACCELERATION = 300 # pixels/ms^2
 #var speed = 0 # DEV - Deprecated, using player.run_speed instead
 
@@ -17,7 +16,7 @@ func start():
 	
 
 func state_process(delta):
-	if player.direction == 0:
+	if player.input_direction == 0:
 		if player._total_velocity.x == 0:
 			set_state("StandingState")
 		else:
@@ -31,7 +30,7 @@ func state_process(delta):
 		player.run_speed += ACCELERATION * delta
 	else:
 		player.run_speed = player.MAX_RUN_SPEED
-	player.set_controller_velocity(Vector2(player.run_speed * player.last_direction, 0))
+	player.set_controller_velocity(Vector2(player.run_speed * player.facing_direction, 0))
 	
 
 func set_state(new_state):
