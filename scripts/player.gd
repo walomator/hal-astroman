@@ -21,8 +21,8 @@ signal shutdown
 
 var direction = 0 # 0 = stationary, 1 = right, -1 = left
 var last_direction = 1 # The direction last moved, or the facing direction
-var start_pos_x = 128 # DEV - Make single vector
-var start_pos_y = 128
+var start_pos_x = 38 # DEV - Make single vector
+var start_pos_y = 17
 var run_speed = 0
 var is_moving = false # Running implies specifically FAST running, to be considered if there will be multiple speeds
 #var item_1 = "hookshot"
@@ -48,6 +48,7 @@ var action
 const StandingState = preload("res://scripts/states/StandingState.gd")
 const RunningState  = preload("res://scripts/states/RunningState.gd")
 const JumpingState  = preload("res://scripts/states/JumpingState.gd")
+const SkiddingState  = preload("res://scripts/states/SkiddingState.gd")
 #const StunnedState  = preload("res://scripts/states/StunnedState.gd")
 var state = StandingState.new(self)
 
@@ -96,10 +97,10 @@ func _physics_process(delta):
 func _input(event):
 	if event.is_action_pressed("shutdown"):
 		emit_signal("shutdown")
-
-	if direction:
-		last_direction = direction
-
+	
+#	if direction:
+#		last_direction = direction
+	
 	# Input
 	if event.is_action_pressed("move_right"):
 		action.add("right")
@@ -128,6 +129,7 @@ func _input(event):
 	
 
 func set_state(new_state): # After initial call, only use state.set_state
+	print(new_state)
 	# DEV - These don't need to be instances right _now_
 	var old_state = state
 	if   new_state == "StandingState":
@@ -138,6 +140,8 @@ func set_state(new_state): # After initial call, only use state.set_state
 		state = JumpingState.new(self)
 #	elif new_state == "StunnedState":
 #		state = StunnedState.new(self, STUN_TIME, old_state.state_name)
+	elif new_state == "SkiddingState":
+		state = SkiddingState.new(self)
 	else:
 		print("invalid state")
 		
@@ -163,14 +167,18 @@ func update_direction(): # Decides how to update sprite # DEV - Should be passed
 	if "left" in action.get_actions():
 		direction -= 1
 	
-	run_speed = MAX_RUN_SPEED * direction # This makes the next line seem redundant, and it is as long as there is no speed ramp
-	run_speed = min(abs(run_speed), MAX_RUN_SPEED) * direction # DEV - Hacky thing number 2, write this better
+	# DEV - This should be set by states
+#	run_speed = MAX_RUN_SPEED * direction # This makes the next line seem redundant, and it is as long as there is no speed ramp
+#	run_speed = min(abs(run_speed), MAX_RUN_SPEED) * direction # DEV - Hacky thing number 2, write this better
 	
 	if direction == 0:
 		is_moving = false
 	else:
 		is_moving = true
 	
+	if direction:
+		last_direction = direction
+		
 	if direction > 0:
 		flip_sprite(false)
 	if direction < 0:
@@ -223,7 +231,7 @@ func launch_particle(particle_type): # BUG - Causes crash
 	
 
 func debug():
-#	print("state: ", state.get_name())
+	print("state: ", state.get_name())
 	var ground_collision = test_move(get_transform(), -GRAVITY_NORMAL)
 	print(ground_collision)
 	

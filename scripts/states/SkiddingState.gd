@@ -1,54 +1,48 @@
 extends "res://scripts/framework/State.gd"
 
 var is_grounded = true # DEV - Not currently implemented, but may solve the jumping problem
-const ACCELERATION = 300 # pixels/ms^2
-#var speed = 0 # DEV - Deprecated, using player.run_speed instead
+const DECELERATION = 900 # pixels/ms^2  # DEV - Should instead access from player.gd
 
 func _init(controlled_player):
 	player = controlled_player
-	
+
 
 func start():
-	set_state_name("RunningState")
-	player.move_anim_node.play()
-	player.move_anim_node.visible = true
-	
-	player.run_speed = 0
-	
+	set_state_name("SkiddingState")
+	player.idle_sprite_node.visible = true
+
 
 func state_process(delta):
-	if player.direction == 0:
-		if player._total_velocity.x == 0:
-			set_state("StandingState")
-		else:
-			set_state("SkiddingState")
-	
+	if player.is_moving:
+		set_state("RunningState")
+		
+	if player.run_speed == 0:
+		set_state("StandingState")
+
 	if is_in_air():
 		set_state("JumpingState")
-	
+
 	# Set velocity caused by player input for handling by character.gd
-	if player.run_speed < player.MAX_RUN_SPEED:
-		player.run_speed += ACCELERATION * delta
+	if player.run_speed > 0:
+		player.run_speed -= DECELERATION * delta
 	else:
-		player.run_speed = player.MAX_RUN_SPEED
+		player.run_speed = 0
 	player.set_controller_velocity(Vector2(player.run_speed * player.last_direction, 0))
-	
+
 
 func set_state(new_state):
 	if exiting == true:
 		return
 	exiting = true
 	
-	player.move_anim_node.stop()
-	player.move_anim_node.visible = false
+	player.idle_sprite_node.visible = false
 	player.set_state(new_state)
-	
+
 
 func jump():
 	player.default_jump()
 	set_state("JumpingState")
-	
+
 
 func is_in_air():
 	return not player.test_move(player.get_transform(), Vector2(0, 1))
-	

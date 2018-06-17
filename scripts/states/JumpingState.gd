@@ -20,9 +20,12 @@ func start():
 
 func state_process(delta):
 	# Set velocity caused by player input for handling by character.gd
-	player.set_controller_velocity(Vector2(player.run_speed, 0))
+	player.set_controller_velocity(Vector2(player.run_speed * player.direction, 0))
 	
-	if is_on_ground(): # BUG - This returns true instantly, b/c player is on floor
+	if player.direction == 0:
+		player.run_speed = 0 # FEAT - Don't allow sudden stopping in mid-air
+	
+	if is_on_ground():
 		set_state("StandingState")
 	
 
@@ -46,6 +49,6 @@ func jump():
 
 func is_on_ground():
 	var test = false
-	if player.velocity.y >= 0:
+	if player.natural_velocity.y >= 0:
 		test = player.test_move(player.get_transform(), Vector2(0, 1))
 	return test
