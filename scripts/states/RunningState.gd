@@ -1,6 +1,5 @@
 extends "res://scripts/framework/State.gd"
 
-const ACCELERATION = 300 # pixels/ms^2
 #var speed = 0 # DEV - Deprecated, using player.run_speed instead
 
 func _init(controlled_player):
@@ -27,7 +26,7 @@ func state_process(delta):
 	
 	# Set velocity caused by player input for handling by character.gd
 	if player.run_speed < player.MAX_RUN_SPEED:
-		player.run_speed += ACCELERATION * delta
+		player.run_speed += player.ACCELERATION * delta
 	else:
 		player.run_speed = player.MAX_RUN_SPEED
 	player.set_controller_velocity(Vector2(player.run_speed * player.facing_direction, 0))

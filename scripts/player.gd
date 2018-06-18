@@ -28,16 +28,18 @@ var run_speed = 0
 var is_moving = false # Running implies specifically FAST running, to be considered if there will be multiple speeds
 #var item_1 = "hookshot"
 
-const MAX_RUN_SPEED    = 195
-const MAX_VELOCITY     = 400 # Adjustment from MAX_VELOCITY of character.gd class
-const JUMP_FORCE       = 260
+#const MAX_RUN_SPEED    = 195
+const MAX_RUN_SPEED    = 100
+#const JUMP_FORCE       = 260
+const JUMP_FORCE       = 170
 const BOUNCE_FORCE     = 200 # FEAT - Should be enemy-specific
-#const GRAVITY          = 400 # Opposes jump force
+const GRAVITY          = 200
 const HURT_FORCE       = 80
 const STUN_TIME        = 0.5
 const MAX_HEALTH       = 3
 const GROUND_DRAG      = 300
-const AIR_ACCELERATION = 4
+const ACCELERATION     = 300 # pixels/ms^2
+const AIR_ACCELERATION = 100
 
 var jump_count = 0
 var max_jump_count = 2
