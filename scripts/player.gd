@@ -226,10 +226,12 @@ func launch_particle(particle_type): # BUG - Causes crash
 	
 
 func debug():
-#	print("state: ", state.get_name())
-#	var ground_collision = test_move(get_transform(), -GRAVITY_NORMAL)
-#	print(ground_collision)
-	print(self.get_path())
+	if world_node.current_map.name == "Map0":
+		world_node.change_map("MapFlat.tscn")
+	elif world_node.current_map.name == "MapFlat":
+		world_node.change_map("Map0.tscn")
+
+	reset_position()
 	
 
 func handle_body_collided(colliding_body, collision_normal): # DEV - This function name is misleading

@@ -2,7 +2,7 @@
 
 [ext_resource path="res://scenes/maps/tilesets/Space.tres" type="TileSet" id=1]
 
-[node name="Map0" type="Node2D"]
+[node name="MapFlat" type="Node2D" index="0"]
 
 [node name="TileMap" type="TileMap" parent="." index="0"]
 
