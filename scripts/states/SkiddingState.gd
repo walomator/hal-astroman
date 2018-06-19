@@ -1,7 +1,6 @@
 extends "res://scripts/framework/State.gd"
 
 var is_grounded = true # DEV - Not currently implemented, but may solve the jumping problem
-const DECELERATION = 900 # pixels/ms^2  # DEV - Should instead access from player.gd
 
 func _init(controlled_player):
 	player = controlled_player
@@ -13,18 +12,18 @@ func start():
 
 
 func state_process(delta):
-	if player.is_moving:
-		set_state("RunningState")
-		
-	if player.run_speed == 0:
-		set_state("StandingState")
-
 	if is_in_air():
 		set_state("JumpingState")
+		
+	elif player.input_direction != 0:
+		set_state("RunningState")
+		
+	elif player.run_speed == 0:
+		set_state("StandingState")
 
 	# Set velocity caused by player input for handling by character.gd
 	if player.run_speed > 0:
-		player.run_speed -= DECELERATION * delta
+		player.run_speed -= player.GROUND_DRAG * delta
 	else:
 		player.run_speed = 0
 	player.set_controller_velocity(Vector2(player.run_speed * player.facing_direction, 0))

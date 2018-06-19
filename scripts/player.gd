@@ -1,90 +1,77 @@
 extends "framework/character.gd"
 
-var debug = false
+# Status constants
+const MAX_HEALTH       = 3
+const MAX_JUMP_COUNT   = 2
+const KONAMI_CODE = ["up", "up", "down", "down", "left", "right", "left", "right"]
 
-#var fireball_scene = preload("res://scenes/effects/Fireball.tscn")
+# Physics constants, with pixels as units of length and milliseconds as units of time
+const GRAVITY          = 200
+const MAX_RUN_SPEED    = 100
+const ACCELERATION     = 300
+const AIR_ACCELERATION = 100
+const GROUND_DRAG      = 900
+const JUMP_FORCE       = 170
+const BOUNCE_FORCE     = 200 # FEAT - Should be enemy-specific
+const HURT_FORCE       = 80
+const STUN_TIME        = 0.5
 
-var idle_sprite_node # Safe to initialize in the _ready() function
+# Movement-dependent variables
+var input_direction = 0 # 0 = stationary, 1 = right, -1 = left
+var facing_direction = 1 # The direction last moved
+var run_speed = 0
+var jump_count = 0
+
+# State machine possible states.
+const StandingState  = preload("res://scripts/states/StandingState.gd")
+const RunningState   = preload("res://scripts/states/RunningState.gd")
+const JumpingState   = preload("res://scripts/states/JumpingState.gd")
+const SkiddingState  = preload("res://scripts/states/SkiddingState.gd")
+const StunnedState  = preload("res://scripts/states/StunnedState.gd")
+var state = StandingState.new(self)
+
+# References to nodes typical to the scene
+var idle_sprite_node
 var move_anim_node
 var fall_anim_node
 var landing_anim_node
 #var scoreboard_node
 var collision_handler_node
-var center_box_node
 var global_node
 var root_node
+var world_node
 
+# Signals
 signal exited_center_box
 signal attacked_enemy
 #signal bumped_enemy
 #signal body_collided
 signal shutdown
 
-var input_direction = 0 # 0 = stationary, 1 = right, -1 = left
-var facing_direction = 1 # The direction last moved
-var start_pos_x = 38 # DEV - Make single vector
-var start_pos_y = 17
-var run_speed = 0
-var is_moving = false # Running implies specifically FAST running, to be considered if there will be multiple speeds
-#var item_1 = "hookshot"
-
-#const MAX_RUN_SPEED    = 195
-const MAX_RUN_SPEED    = 100
-#const JUMP_FORCE       = 260
-const JUMP_FORCE       = 170
-const BOUNCE_FORCE     = 200 # FEAT - Should be enemy-specific
-const GRAVITY          = 200
-const HURT_FORCE       = 80
-const STUN_TIME        = 0.5
-const MAX_HEALTH       = 3
-const GROUND_DRAG      = 300
-const ACCELERATION     = 300 # pixels/ms^2
-const AIR_ACCELERATION = 100
-
-var jump_count = 0
-var max_jump_count = 2
-
+# External scripts
 const ActionHolder = preload("res://scripts/framework/action_holder.gd")
 var action
-
-# State machine possible states.
-const StandingState = preload("res://scripts/states/StandingState.gd")
-const RunningState  = preload("res://scripts/states/RunningState.gd")
-const JumpingState  = preload("res://scripts/states/JumpingState.gd")
-const SkiddingState  = preload("res://scripts/states/SkiddingState.gd")
-#const StunnedState  = preload("res://scripts/states/StunnedState.gd")
-var state = StandingState.new(self)
 
 func _ready():
 	_set_health(MAX_HEALTH)
 	_set_is_weighted(true)
 	
-	var path_to_player_node = "/root/World/Player/"
-#	var path_to_scoreboard_node = "/root/World/Scoreboard/"
-	var path_to_collision_handler_node = "/root/World/CollisionHandler/"
-	var path_to_center_box_node = "/root/World/CenterBox/"
-	var path_to_global_node = "/root/Global/"
-	var idle_sprite_node_name = "IdleSprite/"
-	var move_anim_node_name = "RunAnim/"
-	var fall_anim_node_name = "FallAnim/"
-	var landing_anim_node_name = "LandingAnim/"
-	
-	idle_sprite_node       = get_node(path_to_player_node + idle_sprite_node_name)
-	move_anim_node         = get_node(path_to_player_node + move_anim_node_name)
-	fall_anim_node         = get_node(path_to_player_node + fall_anim_node_name)
-	landing_anim_node      = get_node(path_to_player_node + landing_anim_node_name)
-#	scoreboard_node        = get_node(path_to_scoreboard_node)
-	collision_handler_node = get_node(path_to_collision_handler_node)
-	global_node            = get_node(path_to_global_node)
+	var player_nodepath = "/root/World/Player/"
+	idle_sprite_node       = get_node(player_nodepath + "IdleSprite/")
+	move_anim_node         = get_node(player_nodepath + "RunAnim/")
+	fall_anim_node         = get_node(player_nodepath + "FallAnim/")
+	landing_anim_node      = get_node(player_nodepath + "LandingAnim/")
+#	scoreboard_node        = get_node("/root/World/Scoreboard/")
+	collision_handler_node = get_node("/root/World/CollisionHandler/")
+	global_node            = get_node("/root/Global")
 	root_node              = get_node("/root/")
-	center_box_node        = get_node(path_to_center_box_node)
+	world_node             = get_node("/root/World/")
 	
-	root_node.call_deferred("add_child", center_box_node) # DEV - This should be handled elsewhere
 	self.connect("body_collided", collision_handler_node, "handle_body_collided")
 	self.connect("shutdown", global_node, "handle_shutdown")
 	self.connect("exited_center_box", global_node, "handle_exited_center_box")
 	
-	action = ActionHolder.new()
+	action = ActionHolder.new() # Holds the current keys being pressed
 	
 
 func _process(delta):
@@ -118,7 +105,12 @@ func _input(event):
 		update_direction()
 
 	if event.is_action_pressed("move_up"):
+		action.update_history("up")
 		state.jump()
+	
+	if event.is_action_pressed("move_down"):
+		action.update_history("down")
+#		state.duck() # FEAT - Not implemented yet
 
 	if event.is_action_pressed("reset"):
 		reset_position()
@@ -128,6 +120,12 @@ func _input(event):
 
 	if event.is_action_pressed("debug"):
 		debug()
+		
+	# Konami code proof of concept
+	if action.history_equals(KONAMI_CODE):
+		print("Konami would be proud.")
+		action.clear_history()
+		
 	
 
 func set_state(new_state): # After initial call, only use this function coupled with state-handled switching
@@ -168,10 +166,10 @@ func update_direction(): # Decides how to update sprite # DEV - Should be passed
 	if "left" in action.get_actions():
 		input_direction -= 1
 	
-	if input_direction == 0:
-		is_moving = false
-	else:
-		is_moving = true
+#	if input_direction == 0: # DEV - Deprecated
+#		is_moving = false
+#	else:
+#		is_moving = true
 	
 	if input_direction:
 		facing_direction = input_direction
@@ -199,13 +197,13 @@ func reel(reel_force, normal):
 	
 
 func reset_position():
-	self.position = Vector2(start_pos_x, start_pos_y)
+	self.position = Vector2(38, 17)
 	state.set_state("StandingState")
 	reset_velocity()
 	
 
 func default_jump():
-	if jump_count < max_jump_count:
+	if jump_count < MAX_JUMP_COUNT:
 		reset_velocity()
 		increase_velocity(Vector2(0, -JUMP_FORCE))
 		jump_count += 1
@@ -232,7 +230,6 @@ func debug():
 #	var ground_collision = test_move(get_transform(), -GRAVITY_NORMAL)
 #	print(ground_collision)
 	print(self.get_path())
-	
 	
 
 func handle_body_collided(colliding_body, collision_normal): # DEV - This function name is misleading

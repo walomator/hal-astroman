@@ -12,7 +12,7 @@ func start():
 	
 
 func state_process(delta):
-	if player.is_moving:
+	if player.input_direction != 0:
 		set_state("RunningState")
 	
 	if is_in_air():
